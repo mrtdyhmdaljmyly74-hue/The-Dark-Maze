@@ -1,0 +1,738 @@
+<meta name='viewport' content='width=device-width, initial-scale=1'/><!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>prototype مراد العشش الهمجي</title>
+
+    <!-- Three.js Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+            margin: 0;
+            padding: 0;
+            font-family: 'Arial', sans-serif;
+            touch-action: none; /* منع السحب الافتراضي للمتصفح */
+        }
+
+        html, body {
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            background-color: #000;
+            color: #fff;
+        }
+
+        /* 1. Splash Screen & Loader */
+        #splash-screen {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: #000;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+        }
+
+        .splash-text {
+            font-size: 3.5rem;
+            font-weight: 900;
+            text-align: center;
+            display: none;
+            letter-spacing: 2px;
+        }
+
+        #text-mhhen { color: #FFD700; text-shadow: 0 0 30px rgba(255, 215, 0, 0.8); }
+        #text-mhplays { color: #00FFCC; text-shadow: 0 0 30px rgba(0, 255, 204, 0.8); }
+        #text-mhplays span { display: block; font-size: 1.8rem; color: #A4C639; margin-top: 5px; }
+        #text-modded { color: #FF3366; text-shadow: 0 0 30px rgba(255, 51, 102, 0.8); }
+
+        .loader-container {
+            position: absolute;
+            bottom: 40px;
+            width: 70%;
+            max-width: 500px;
+            text-align: center;
+        }
+        .progress-bar-bg {
+            width: 100%; height: 14px;
+            background: #111; border-radius: 7px;
+            border: 1px solid #444; overflow: hidden;
+            margin-bottom: 8px;
+        }
+        .progress-bar-fill {
+            width: 0%; height: 100%;
+            background: linear-gradient(90deg, #FFD700, #FF3366);
+            transition: width 0.05s linear;
+        }
+        .progress-text { font-size: 1.1rem; color: #ccc; font-weight: bold; }
+
+        /* 2. Main Menu (Granny Style Landscape) */
+        #main-menu {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: linear-gradient(to right, rgba(0,0,0,0.85) 40%, rgba(0,0,0,0.3)),
+                        radial-gradient(circle, #1a0000 0%, #000 90%);
+            display: none;
+            flex-direction: row;
+            justify-content: flex-end;
+            align-items: center;
+            padding-right: 8%;
+            z-index: 9000;
+        }
+
+        .menu-container {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            text-align: right;
+        }
+
+        .menu-title {
+            font-size: 2.8rem;
+            color: #8B0000;
+            text-shadow: 3px 3px 10px #000, 0 0 20px #ff0000;
+            font-weight: 900;
+            margin-bottom: 25px;
+            letter-spacing: 1px;
+        }
+
+        .btn-menu {
+            width: 240px;
+            padding: 12px 0;
+            margin: 8px 0;
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: #ddd;
+            background: rgba(20, 20, 20, 0.8);
+            border: 2px solid #555;
+            border-radius: 4px;
+            cursor: pointer;
+            text-align: center;
+            transition: 0.2s;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.8);
+        }
+        .btn-menu:active { transform: scale(0.95); background: #8B0000; border-color: #ff0000; }
+
+        /* Settings Dialog */
+        #settings-modal {
+            display: none;
+            position: fixed;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            background: #111;
+            border: 2px solid #8B0000;
+            padding: 25px;
+            border-radius: 8px;
+            width: 320px;
+            text-align: center;
+            z-index: 9500;
+            box-shadow: 0 0 30px rgba(255,0,0,0.5);
+        }
+        .gfx-btn {
+            width: 100%; padding: 10px; margin: 6px 0;
+            background: #222; border: 1px solid #444;
+            color: #fff; font-weight: bold; cursor: pointer;
+            border-radius: 4px;
+        }
+        .gfx-btn.active { border-color: #ff0000; background: #550000; color: #fff; }
+
+        /* 3. Game HUD Overlay */
+        #game-hud {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            display: none;
+            z-index: 1000;
+        }
+
+        /* Health Bar */
+        #health-container {
+            position: absolute;
+            top: 15px; left: 15px; width: 220px;
+            background: rgba(0,0,0,0.8);
+            border: 2px solid #333; padding: 4px;
+            border-radius: 6px; pointer-events: none;
+        }
+        #health-bar { width: 100%; height: 18px; background: #cc0000; border-radius: 3px; transition: width 0.2s; }
+        #health-text { position: absolute; width: 100%; text-align: center; top: 4px; left: 0; font-size: 0.85rem; font-weight: bold; }
+
+        /* Touch Control Elements */
+        #touch-joystick-base {
+            position: absolute; bottom: 30px; left: 30px;
+            width: 120px; height: 120px;
+            background: rgba(255,255,255,0.1);
+            border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            z-index: 1002;
+        }
+        #touch-joystick-stick {
+            position: absolute; top: 35px; left: 35px;
+            width: 50px; height: 50px;
+            background: rgba(255,0,0,0.6);
+            border: 2px solid #ff0000;
+            border-radius: 50%;
+            pointer-events: none;
+        }
+
+        .hud-btn {
+            position: absolute;
+            border-radius: 50%; display: flex;
+            justify-content: center; align-items: center;
+            font-weight: bold; color: white;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.8);
+            border: 2px solid rgba(255,255,255,0.4);
+            z-index: 1002;
+        }
+
+        #btn-sprint {
+            bottom: 30px; right: 30px; width: 75px; height: 75px;
+            background: radial-gradient(circle, #ff0055, #880022);
+            font-size: 0.9rem;
+        }
+        #btn-sprint.cooldown { opacity: 0.3; background: #222; }
+
+        #btn-action {
+            bottom: 120px; right: 30px; width: 70px; height: 70px;
+            background: radial-gradient(circle, #00ffcc, #008866);
+            font-size: 0.9rem; display: none;
+        }
+
+        #msg-box {
+            position: absolute; top: 10%; left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.9); border: 2px solid #8B0000;
+            padding: 10px 25px; border-radius: 20px;
+            font-size: 1.2rem; display: none; text-align: center;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Splash Screen -->
+    <div id="splash-screen">
+        <div id="text-mhhen" class="splash-text">MHHEN</div>
+        <div id="text-mhplays" class="splash-text">MHPLAYS<span>Android</span></div>
+        <div id="text-modded" class="splash-text">Modded & Scripted</div>
+
+        <div class="loader-container">
+            <div class="progress-bar-bg"><div id="progress-fill" class="progress-bar-fill"></div></div>
+            <div id="progress-text" class="progress-text">0%</div>
+        </div>
+    </div>
+
+    <!-- Main Menu (Granny Style Layout) -->
+    <div id="main-menu">
+        <div class="menu-container">
+            <div class="menu-title">prototype<br>مراد العشش الهمجي</div>
+            <button class="btn-menu" onclick="startGame()">Play</button>
+            <button class="btn-menu" onclick="toggleSettings(true)">Settings</button>
+        </div>
+    </div>
+
+    <!-- Settings Window -->
+    <div id="settings-modal">
+        <h3 style="margin-bottom:15px; color:#ff0000;">جودة الجرافيكس / Quality</h3>
+        <button class="gfx-btn" onclick="setGraphics('low')">Low (مظلم بدون إضاءة)</button>
+        <button class="gfx-btn" onclick="setGraphics('medium')">Medium (عالي بدون مصابيح)</button>
+        <button class="gfx-btn active" id="btn-gfx-high" onclick="setGraphics('high')">High (خارق + مصابيح)</button>
+        <br><br>
+        <button class="btn-menu" style="width:100px; padding:6px; font-size:1rem;" onclick="toggleSettings(false)">إغلاق</button>
+    </div>
+
+    <!-- Game HUD -->
+    <div id="game-hud">
+        <div id="health-container">
+            <div id="health-bar"></div>
+            <div id="health-text">HP: 100 / 100</div>
+        </div>
+
+        <!-- Custom Joystick Base -->
+        <div id="touch-joystick-base"><div id="touch-joystick-stick"></div></div>
+        
+        <div id="btn-sprint" class="hud-btn" onclick="triggerSprint()">Sprint</div>
+        <div id="btn-action" class="hud-btn" onclick="handleAction()">Take</div>
+        <div id="msg-box"></div>
+    </div>
+
+    <script>
+        /* ----------------------------------------------------
+           1. SPLASH SCREEN & LOADING (6 SECONDS EXACT)
+        ---------------------------------------------------- */
+        let loadingTime = 0;
+        const totalLoadingTime = 6000;
+        const updateInterval = 50;
+
+        const fillEl = document.getElementById('progress-fill');
+        const textEl = document.getElementById('progress-text');
+
+        const mhhen = document.getElementById('text-mhhen');
+        const mhplays = document.getElementById('text-mhplays');
+        const modded = document.getElementById('text-modded');
+
+        const loadingTimer = setInterval(() => {
+            loadingTime += updateInterval;
+            let progress = Math.min(Math.floor((loadingTime / totalLoadingTime) * 100), 100);
+            
+            fillEl.style.width = progress + '%';
+            textEl.innerText = progress + '%';
+
+            let seconds = loadingTime / 1000;
+
+            if (seconds >= 0 && seconds < 2) {
+                mhhen.style.display = 'block'; mhplays.style.display = 'none'; modded.style.display = 'none';
+            } else if (seconds >= 2 && seconds < 4) {
+                mhhen.style.display = 'none'; mhplays.style.display = 'block'; modded.style.display = 'none';
+            } else if (seconds >= 4 && seconds <= 6) {
+                mhhen.style.display = 'none'; mhplays.style.display = 'none'; modded.style.display = 'block';
+            }
+
+            if (loadingTime >= totalLoadingTime) {
+                clearInterval(loadingTimer);
+                document.getElementById('splash-screen').style.display = 'none';
+                document.getElementById('main-menu').style.display = 'flex';
+                init3DEngine();
+            }
+        }, updateInterval);
+
+        function toggleSettings(show) {
+            document.getElementById('settings-modal').style.display = show ? 'block' : 'none';
+        }
+
+        /* ----------------------------------------------------
+           2. PROCEDURAL TEXTURE GENERATOR (HEDGE / GRASS)
+        ---------------------------------------------------- */
+        function generateHedgeTexture() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 256; canvas.height = 256;
+            const ctx = canvas.getContext('2d');
+
+            ctx.fillStyle = '#1c3b12';
+            ctx.fillRect(0, 0, 256, 256);
+
+            for (let i = 0; i < 4000; i++) {
+                let x = Math.random() * 256;
+                let y = Math.random() * 256;
+                let radius = 1 + Math.random() * 3;
+                let shade = Math.floor(Math.random() * 80);
+                ctx.fillStyle = `rgb(${20 + shade}, ${60 + shade}, ${15 + shade})`;
+                ctx.beginPath();
+                ctx.arc(x, y, radius, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            const texture = new THREE.CanvasTexture(canvas);
+            texture.wrapS = THREE.RepeatWrapping;
+            texture.wrapT = THREE.RepeatWrapping;
+            return texture;
+        }
+
+        /* ----------------------------------------------------
+           3. THREE.JS ENGINE & GRAPHICS SYSTEM
+        ---------------------------------------------------- */
+        let scene, camera, renderer;
+        let player, nextbot, keyItem, doorItem;
+        let flashlight, globalLanterns = [];
+        let hedgeMaterial, floorMaterial;
+
+        let playerHP = 100;
+        let hasKey = false;
+        let isSprintCooldown = false;
+        let speedMultiplier = 1;
+        let canTakeDamage = true;
+        let qualityMode = 'high';
+
+        // 3D Maze Map
+        const mazeMap = [
+            [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+            [1,'S',0,1,0,0,0,1,0,0,0,0,0,'K',1],
+            [1,1,0,1,0,1,0,1,0,1,1,1,1,0,1],
+            [1,0,0,0,0,1,0,0,0,0,0,0,1,0,1],
+            [1,0,1,1,1,1,1,1,1,1,1,0,1,0,1],
+            [1,0,0,0,1,0,0,0,0,0,1,0,0,0,1],
+            [1,1,1,0,1,0,1,1,1,0,1,1,1,0,1],
+            [1,0,0,0,0,0,1,0,0,0,0,0,1,0,1],
+            [1,0,1,1,1,1,1,0,1,1,1,0,1,1,1],
+            [1,0,0,0,0,0,0,0,1,0,0,0,0,'D',1],
+            [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+        ];
+
+        const cellSize = 8;
+        const wallHeight = 8;
+        let walls = [];
+
+        function init3DEngine() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x020302);
+            scene.fog = new THREE.FogExp2(0x020302, 0.04);
+
+            camera = new THREE.PerspectiveCamera(65, window.innerWidth / window.innerHeight, 0.1, 1000);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.shadowMap.enabled = true;
+            document.body.appendChild(renderer.domElement);
+
+            // Generated Textures
+            const hedgeTex = generateHedgeTexture();
+            hedgeTex.repeat.set(2, 2);
+
+            hedgeMaterial = new THREE.MeshStandardMaterial({ 
+                map: hedgeTex, roughness: 0.8, metalness: 0.1 
+            });
+
+            const floorTex = generateHedgeTexture();
+            floorTex.repeat.set(16, 16);
+            floorMaterial = new THREE.MeshStandardMaterial({ 
+                map: floorTex, roughness: 0.9 
+            });
+
+            // Player Setup (Granny First-Person Style)
+            player = new THREE.Group();
+            scene.add(player);
+
+            camera.position.set(0, 2.5, 0);
+            camera.rotation.order = 'YXZ'; // ترتيب التدوير لمنع الدوار وزاوية الكاميرا المائلة
+            player.add(camera);
+
+            flashlight = new THREE.SpotLight(0xffffff, 2.5, 35, Math.PI / 4, 0.5);
+            flashlight.position.set(0, 0, 0);
+            flashlight.castShadow = true;
+            camera.add(flashlight);
+            flashlight.target.position.set(0, 0, -5);
+            camera.add(flashlight.target);
+
+            build3DMaze();
+            createNextbot();
+
+            // Touch Look Control Engine (Granny Style)
+            setupGrannyTouchControls();
+
+            window.addEventListener('resize', onWindowResize);
+        }
+
+        function build3DMaze() {
+            const wallGeo = new THREE.BoxGeometry(cellSize, wallHeight, cellSize);
+
+            const floorGeo = new THREE.PlaneGeometry(mazeMap[0].length * cellSize, mazeMap.length * cellSize);
+            const floor = new THREE.Mesh(floorGeo, floorMaterial);
+            floor.rotation.x = -Math.PI / 2;
+            floor.position.set((mazeMap[0].length * cellSize)/2 - cellSize/2, 0, (mazeMap.length * cellSize)/2 - cellSize/2);
+            floor.receiveShadow = true;
+            scene.add(floor);
+
+            const ceiling = new THREE.Mesh(floorGeo, hedgeMaterial);
+            ceiling.rotation.x = Math.PI / 2;
+            ceiling.position.set((mazeMap[0].length * cellSize)/2 - cellSize/2, wallHeight, (mazeMap.length * cellSize)/2 - cellSize/2);
+            scene.add(ceiling);
+
+            for (let r = 0; r < mazeMap.length; r++) {
+                for (let c = 0; c < mazeMap[r].length; c++) {
+                    let cell = mazeMap[r][c];
+                    let x = c * cellSize;
+                    let z = r * cellSize;
+
+                    if (cell === 1) {
+                        let wall = new THREE.Mesh(wallGeo, hedgeMaterial);
+                        wall.position.set(x, wallHeight / 2, z);
+                        wall.castShadow = true;
+                        wall.receiveShadow = true;
+                        scene.add(wall);
+                        walls.push(wall);
+                    } else if (cell === 'S') {
+                        player.position.set(x, 0, z);
+                    } else if (cell === 'K') {
+                        const keyGeo = new THREE.TorusGeometry(0.5, 0.15, 12, 24);
+                        const keyMat = new THREE.MeshStandardMaterial({ color: 0xFFD700, metalness: 0.9, roughness: 0.1 });
+                        keyItem = new THREE.Mesh(keyGeo, keyMat);
+                        keyItem.position.set(x, 1.5, z);
+                        scene.add(keyItem);
+                    } else if (cell === 'D') {
+                        const doorGeo = new THREE.BoxGeometry(cellSize, wallHeight - 1, 0.6);
+                        const doorMat = new THREE.MeshStandardMaterial({ color: 0x550000, roughness: 0.5 });
+                        doorItem = new THREE.Mesh(doorGeo, doorMat);
+                        doorItem.position.set(x, (wallHeight - 1) / 2, z);
+                        scene.add(doorItem);
+                    }
+
+                    if (cell === 0 && Math.random() < 0.15) {
+                        const lamp = new THREE.PointLight(0xffaa44, 1.2, 12);
+                        lamp.position.set(x, wallHeight - 1.5, z);
+                        scene.add(lamp);
+                        globalLanterns.push(lamp);
+                    }
+                }
+            }
+        }
+
+        function createNextbot() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 256; canvas.height = 256;
+            const ctx = canvas.getContext('2d');
+            
+            ctx.fillStyle = '#ff0000';
+            ctx.beginPath(); ctx.arc(128, 128, 120, 0, Math.PI * 2); ctx.fill();
+            
+            ctx.fillStyle = '#000';
+            ctx.beginPath(); ctx.arc(85, 100, 25, 0, Math.PI * 2); ctx.arc(171, 100, 25, 0, Math.PI * 2); ctx.fill();
+            ctx.beginPath(); ctx.arc(128, 170, 50, 0, Math.PI, false); ctx.lineWidth = 10; ctx.stroke();
+
+            const texture = new THREE.CanvasTexture(canvas);
+            const spriteMat = new THREE.SpriteMaterial({ map: texture });
+            
+            nextbot = new THREE.Sprite(spriteMat);
+            nextbot.scale.set(5, 5, 1);
+            nextbot.position.set(cellSize * 13, 2.5, cellSize * 1);
+            scene.add(nextbot);
+        }
+
+        /* ----------------------------------------------------
+           4. GRAPHICS QUALITY SETTINGS CONTROL
+        ---------------------------------------------------- */
+        function setGraphics(level) {
+            qualityMode = level;
+            document.querySelectorAll('.gfx-btn').forEach(b => b.classList.remove('active'));
+
+            if (level === 'low') {
+                renderer.shadowMap.enabled = false;
+                flashlight.visible = false;
+                globalLanterns.forEach(l => l.visible = false);
+            } else if (level === 'medium') {
+                renderer.shadowMap.enabled = true;
+                flashlight.visible = false;
+                globalLanterns.forEach(l => l.visible = false);
+            } else if (level === 'high') {
+                renderer.shadowMap.enabled = true;
+                flashlight.visible = true;
+                globalLanterns.forEach(l => l.visible = true);
+                document.getElementById('btn-gfx-high').classList.add('active');
+            }
+        }
+
+        /* ----------------------------------------------------
+           5. GRANNY STYLE TOUCH LOOK & JOYSTICK CONTROLS
+        ---------------------------------------------------- */
+        let moveVec = { x: 0, y: 0 };
+        let joystickTouchId = null;
+        let lookTouchId = null;
+        let previousTouchX = 0, previousTouchY = 0;
+
+        const stick = document.getElementById('touch-joystick-stick');
+        const base = document.getElementById('touch-joystick-base');
+
+        function setupGrannyTouchControls() {
+            window.addEventListener('touchstart', (e) => {
+                for (let i = 0; i < e.changedTouches.length; i++) {
+                    let touch = e.changedTouches[i];
+
+                    // التحقق إذا كان اللمس داخل منطقة الجويستيك
+                    const rect = base.getBoundingClientRect();
+                    if (touch.clientX >= rect.left && touch.clientX <= rect.right &&
+                        touch.clientY >= rect.top && touch.clientY <= rect.bottom) {
+                        joystickTouchId = touch.identifier;
+                        updateJoystick(touch);
+                    } 
+                    // إذا كان اللمس خارج الجويستيك ولمس أزرار الواجهة
+                    else if (lookTouchId === null && touch.clientX > rect.right || touch.clientY < rect.top) {
+                        lookTouchId = touch.identifier;
+                        previousTouchX = touch.clientX;
+                        previousTouchY = touch.clientY;
+                    }
+                }
+            }, { passive: false });
+
+            window.addEventListener('touchmove', (e) => {
+                e.preventDefault();
+                for (let i = 0; i < e.changedTouches.length; i++) {
+                    let touch = e.changedTouches[i];
+
+                    if (touch.identifier === joystickTouchId) {
+                        updateJoystick(touch);
+                    } else if (touch.identifier === lookTouchId) {
+                        let movementX = touch.clientX - previousTouchX;
+                        let movementY = touch.clientY - previousTouchY;
+
+                        previousTouchX = touch.clientX;
+                        previousTouchY = touch.clientY;
+
+                        // تدوير الكاميرا والرأس مثل لعبة Granny
+                        player.rotation.y -= movementX * 0.005;
+                        camera.rotation.x -= movementY * 0.005;
+
+                        // تحديد زاوية النظر للأعلى وللأسفل (Look Pitch Limit)
+                        camera.rotation.x = Math.max(-Math.PI / 2.2, Math.min(Math.PI / 2.2, camera.rotation.x));
+                    }
+                }
+            }, { passive: false });
+
+            window.addEventListener('touchend', (e) => {
+                for (let i = 0; i < e.changedTouches.length; i++) {
+                    let touch = e.changedTouches[i];
+
+                    if (touch.identifier === joystickTouchId) {
+                        joystickTouchId = null;
+                        stick.style.transform = `translate(0px, 0px)`;
+                        moveVec.x = 0; moveVec.y = 0;
+                    } else if (touch.identifier === lookTouchId) {
+                        lookTouchId = null;
+                    }
+                }
+            });
+        }
+
+        function updateJoystick(touch) {
+            const rect = base.getBoundingClientRect();
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
+
+            let dx = touch.clientX - centerX;
+            let dy = touch.clientY - centerY;
+            let dist = Math.min(Math.hypot(dx, dy), 40);
+            let angle = Math.atan2(dy, dx);
+
+            let stickX = Math.cos(angle) * dist;
+            let stickY = Math.sin(angle) * dist;
+
+            stick.style.transform = `translate(${stickX}px, ${stickY}px)`;
+            moveVec.x = stickX / 40;
+            moveVec.y = -stickY / 40;
+        }
+
+        /* ----------------------------------------------------
+           6. GAME HUD & LOGIC
+        ---------------------------------------------------- */
+        function startGame() {
+            document.getElementById('main-menu').style.display = 'none';
+            document.getElementById('game-hud').style.display = 'block';
+            animate();
+        }
+
+        function triggerSprint() {
+            if (isSprintCooldown) return;
+            speedMultiplier = 2.8;
+            const btn = document.getElementById('btn-sprint');
+            btn.classList.add('cooldown');
+            isSprintCooldown = true;
+
+            showMessage("سرعة اسطورية مفعلة!");
+            setTimeout(() => { speedMultiplier = 1; }, 3000);
+            setTimeout(() => { isSprintCooldown = false; btn.classList.remove('cooldown'); }, 45000);
+        }
+
+        function handleAction() {
+            const actionBtn = document.getElementById('btn-action');
+            if (!hasKey && keyItem) {
+                hasKey = true;
+                scene.remove(keyItem);
+                actionBtn.innerText = 'Drop ✋';
+                showMessage("أخذت المفتاح! ابحث عن الباب الآن");
+            } else if (hasKey) {
+                hasKey = false;
+                keyItem.position.set(player.position.x, 1.5, player.position.z);
+                scene.add(keyItem);
+                actionBtn.innerText = 'Take ✋';
+                showMessage("تم إسقاط المفتاح");
+            }
+        }
+
+        function takeDamage(amount) {
+            if (!canTakeDamage) return;
+            playerHP -= amount;
+            if (playerHP < 0) playerHP = 0;
+
+            document.getElementById('health-bar').style.width = playerHP + '%';
+            document.getElementById('health-text').innerText = `HP: ${playerHP} / 100`;
+
+            canTakeDamage = false;
+            setTimeout(() => { canTakeDamage = true; }, 1000);
+
+            if (playerHP <= 0) {
+                alert("تم القضاء عليك بواسطة مراد العشش!");
+                location.reload();
+            }
+        }
+
+        function showMessage(msg) {
+            const box = document.getElementById('msg-box');
+            box.innerText = msg; box.style.display = 'block';
+            setTimeout(() => { box.style.display = 'none'; }, 3000);
+        }
+
+        /* ----------------------------------------------------
+           7. MAIN LOOP & NEXTBOT CHASE
+        ---------------------------------------------------- */
+        const clock = new THREE.Clock();
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            const delta = clock.getDelta();
+            const moveSpeed = 8 * speedMultiplier * delta;
+
+            if (moveVec.x !== 0 || moveVec.y !== 0) {
+                // الحركة تكون باتجاه زاوية رؤية اللاعب
+                let moveDir = new THREE.Vector3(moveVec.x, 0, -moveVec.y);
+                moveDir.applyAxisAngle(new THREE.Vector3(0, 1, 0), player.rotation.y);
+
+                let nextPos = player.position.clone().addScaledVector(moveDir, moveSpeed);
+                if (!checkWallCollision(nextPos)) {
+                    player.position.copy(nextPos);
+                }
+            }
+
+            if (keyItem && !hasKey) keyItem.rotation.y += 0.03;
+
+            // Nextbot Chasing & Damage
+            let chaseDir = new THREE.Vector3().subVectors(player.position, nextbot.position);
+            chaseDir.y = 0; chaseDir.normalize();
+            nextbot.position.addScaledVector(chaseDir, 5.8 * delta);
+
+            if (nextbot.position.distanceTo(player.position) < 2.0) {
+                takeDamage(16);
+            }
+
+            checkInteractions();
+            renderer.render(scene, camera);
+        }
+
+        function checkWallCollision(pos) {
+            for (let wall of walls) {
+                let box = new THREE.Box3().setFromObject(wall);
+                if (box.containsPoint(pos)) return true;
+            }
+            return false;
+        }
+
+        function checkInteractions() {
+            const actionBtn = document.getElementById('btn-action');
+            if (!hasKey && keyItem) {
+                if (player.position.distanceTo(keyItem.position) < 3.5) {
+                    actionBtn.style.display = 'flex';
+                    actionBtn.innerText = 'Take ✋';
+                } else { actionBtn.style.display = 'none'; }
+            } else if (hasKey) { actionBtn.style.display = 'flex'; }
+
+            if (doorItem && player.position.distanceTo(doorItem.position) < 4) {
+                if (!hasKey) {
+                    showMessage("تحتاج إلى المفتاح لفتح الباب!");
+                } else {
+                    showMessage("🎉 مبروك! فتحت الباب وهروب بنجاح!");
+                    setTimeout(() => { alert("لقد فزت باللعبة!"); location.reload(); }, 1000);
+                }
+            }
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+    </script>
+</body>
+</html>
