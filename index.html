@@ -1,0 +1,959 @@
+<meta name='viewport' content='width=device-width, initial-scale=1'/><!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>prototype مراد العشش الهمجي - v1.1</title>
+
+    <!-- Three.js Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+            margin: 0;
+            padding: 0;
+            font-family: 'Arial', cursive, sans-serif;
+            touch-action: none;
+        }
+
+        html, body {
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            background-color: #000;
+            color: #fff;
+        }
+
+        /* 1. Splash Screen & Loader */
+        #splash-screen {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: #000;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+        }
+
+        .splash-text {
+            font-size: 3.5rem;
+            font-weight: 900;
+            text-align: center;
+            display: none;
+            letter-spacing: 2px;
+        }
+
+        #text-mhhen { color: #FFD700; text-shadow: 0 0 30px rgba(255, 215, 0, 0.8); }
+        #text-mhplays { color: #00FFCC; text-shadow: 0 0 30px rgba(0, 255, 204, 0.8); }
+        #text-mhplays span { display: block; font-size: 1.8rem; color: #A4C639; margin-top: 5px; }
+        #text-modded { color: #FF3366; text-shadow: 0 0 30px rgba(255, 51, 102, 0.8); }
+
+        .loader-container {
+            position: absolute;
+            bottom: 40px;
+            width: 70%;
+            max-width: 500px;
+            text-align: center;
+        }
+        .progress-bar-bg {
+            width: 100%; height: 14px;
+            background: #111; border-radius: 7px;
+            border: 1px solid #444; overflow: hidden;
+            margin-bottom: 8px;
+        }
+        .progress-bar-fill {
+            width: 0%; height: 100%;
+            background: linear-gradient(90deg, #FFD700, #FF3366);
+            transition: width 0.05s linear;
+        }
+        .progress-text { font-size: 1.1rem; color: #ccc; font-weight: bold; }
+
+        /* 2. Main Menu (تصميم مطابق للصورة الأولى) */
+        #main-menu {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: #0d0d0d;
+            display: none;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 50px;
+            z-index: 9000;
+        }
+
+        /* القائمة اليسرى */
+        .menu-left {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 12px;
+        }
+
+        .badge-by {
+            background: #FFB700;
+            color: #d60000;
+            font-family: 'Georgia', serif;
+            font-style: italic;
+            font-size: 2.2rem;
+            font-weight: bold;
+            padding: 2px 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            line-height: 1.1;
+        }
+        .badge-by span { display: block; font-size: 2.6rem; }
+
+        .btn-menu-custom {
+            background: #ffffff;
+            color: #cc0000;
+            font-family: 'Georgia', serif;
+            font-style: italic;
+            font-size: 2.3rem;
+            font-weight: bold;
+            padding: 4px 35px;
+            border-radius: 14px;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.6);
+            transition: transform 0.1s;
+        }
+        .btn-menu-custom:active { transform: scale(0.92); }
+
+        /* الشعار الأوسط */
+        .menu-center {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .smiley-logo {
+            width: 190px;
+            height: 190px;
+            background: #ffcc00;
+            border: 6px solid #111;
+            border-radius: 50%;
+            position: relative;
+            box-shadow: 0 0 25px rgba(255, 204, 0, 0.4);
+        }
+        .smiley-logo::before, .smiley-logo::after {
+            content: ''; position: absolute; top: 50px;
+            width: 22px; height: 35px; background: #111; border-radius: 50%;
+        }
+        .smiley-logo::before { left: 55px; }
+        .smiley-logo::after { right: 55px; }
+        .smiley-mouth {
+            position: absolute; bottom: 35px; left: 35px;
+            width: 120px; height: 60px;
+            border-bottom: 8px solid #111;
+            border-radius: 0 0 60px 60px;
+        }
+
+        /* زر المتجر الأعلى */
+        .btn-shop-top {
+            position: absolute;
+            top: 20px; left: 50%;
+            transform: translateX(-50%);
+            background: #ffffff;
+            color: #002288;
+            font-family: 'Georgia', serif;
+            font-style: italic;
+            font-size: 2.2rem;
+            font-weight: bold;
+            padding: 2px 25px;
+            border-radius: 12px;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.6);
+        }
+
+        /* الجزء الأيمن */
+        .menu-right {
+            text-align: right;
+            color: #d60000;
+            font-family: 'Georgia', serif;
+        }
+        .title-ar { font-size: 2.5rem; font-weight: bold; margin-bottom: 10px; line-height: 1.2; }
+        .title-en { font-size: 2.3rem; font-style: italic; font-weight: bold; line-height: 1.1; }
+
+        .ver-tag {
+            position: absolute; bottom: 15px; right: 20px;
+            font-size: 2.5rem; color: #555; font-weight: bold; font-style: italic;
+        }
+        .badge-mhhen {
+            position: absolute; bottom: 15px; right: 80px;
+            background: #ff007f; color: #fff; font-size: 0.9rem; padding: 2px 6px; font-weight: bold;
+        }
+
+        /* Coin Counter */
+        .coin-counter {
+            position: fixed; top: 15px; right: 20px;
+            background: rgba(0,0,0,0.85); border: 2px solid #FFD700;
+            color: #FFD700; padding: 6px 16px; border-radius: 20px;
+            font-size: 1.3rem; font-weight: bold; z-index: 9999;
+            display: flex; align-items: center; gap: 8px;
+        }
+
+        /* Modal Windows (Play, Shop, Customize, Settings) */
+        .modal-overlay {
+            display: none; position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(0,0,0,0.92); z-index: 9500;
+            justify-content: center; align-items: center;
+        }
+
+        .modal-box {
+            background: #111; border: 3px solid #d60000;
+            border-radius: 12px; padding: 20px; width: 85%; max-width: 750px;
+            max-height: 90vh; overflow-y: auto; color: #fff; text-align: center;
+            box-shadow: 0 0 30px rgba(214, 0, 0, 0.5);
+        }
+
+        .btn-close {
+            background: #fff; color: #000; border: none;
+            padding: 6px 20px; border-radius: 8px; font-weight: bold;
+            font-size: 1.1rem; cursor: pointer; margin-top: 15px;
+        }
+
+        /* Difficulty Selection Styling */
+        .diff-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+            gap: 10px; margin: 15px 0;
+        }
+        .btn-diff {
+            background: #222; border: 2px solid #444; color: #fff;
+            padding: 12px; border-radius: 8px; font-size: 1.1rem; font-weight: bold;
+            cursor: pointer; transition: 0.2s;
+        }
+        .btn-diff.active { border-color: #ff0000; background: #660000; }
+        .diff-note {
+            background: #222; border-left: 4px solid #ff0000; padding: 10px;
+            margin: 10px 0; text-align: right; font-size: 0.95rem; line-height: 1.4;
+        }
+
+        /* Shop & Customize Items Grid */
+        .shop-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+            gap: 15px; margin-top: 15px;
+        }
+        .shop-item {
+            background: #1a1a1a; border: 1px solid #333; border-radius: 8px;
+            padding: 10px; display: flex; flex-direction: column; align-items: center;
+        }
+        .shop-img { width: 70px; height: 70px; object-fit: contain; margin-bottom: 8px; }
+        .shop-price { color: #d60000; font-family: 'Georgia', serif; font-style: italic; font-weight: bold; }
+        .btn-buy {
+            background: #FFB700; color: #d60000; border: none;
+            padding: 4px 15px; border-radius: 6px; font-weight: bold;
+            margin-top: 6px; cursor: pointer; font-style: italic;
+        }
+        .btn-buy.purchased { background: #444; color: #888; cursor: default; }
+        .btn-select {
+            background: #00aa55; color: #fff; border: none;
+            padding: 4px 15px; border-radius: 6px; font-weight: bold;
+            margin-top: 6px; cursor: pointer;
+        }
+
+        /* 3. Game HUD */
+        #game-hud {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            display: none; z-index: 1000;
+        }
+
+        #health-container {
+            position: absolute; top: 15px; left: 15px; width: 220px;
+            background: rgba(0,0,0,0.8); border: 2px solid #333;
+            padding: 4px; border-radius: 6px; pointer-events: none;
+        }
+        #health-bar { width: 100%; height: 18px; background: #cc0000; border-radius: 3px; transition: width 0.2s; }
+        #health-text { position: absolute; width: 100%; text-align: center; top: 4px; left: 0; font-size: 0.85rem; font-weight: bold; }
+
+        #touch-joystick-base {
+            position: absolute; bottom: 30px; left: 30px;
+            width: 120px; height: 120px; background: rgba(255,255,255,0.1);
+            border: 2px solid rgba(255,255,255,0.3); border-radius: 50%; z-index: 1002;
+        }
+        #touch-joystick-stick {
+            position: absolute; top: 35px; left: 35px;
+            width: 50px; height: 50px; background: rgba(255,0,0,0.6);
+            border: 2px solid #ff0000; border-radius: 50%; pointer-events: none;
+        }
+
+        .hud-btn {
+            position: absolute; border-radius: 50%; display: flex;
+            justify-content: center; align-items: center; font-weight: bold; color: white;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.8); border: 2px solid rgba(255,255,255,0.4); z-index: 1002;
+        }
+        #btn-sprint {
+            bottom: 30px; right: 30px; width: 75px; height: 75px;
+            background: radial-gradient(circle, #ff0055, #880022); font-size: 0.9rem;
+        }
+        #btn-sprint.cooldown { opacity: 0.3; background: #222; }
+
+        #btn-action {
+            bottom: 120px; right: 30px; width: 70px; height: 70px;
+            background: radial-gradient(circle, #00ffcc, #008866);
+            font-size: 0.9rem; display: none;
+        }
+
+        #msg-box {
+            position: absolute; top: 10%; left: 50%; transform: translateX(-50%);
+            background: rgba(0,0,0,0.9); border: 2px solid #8B0000;
+            padding: 10px 25px; border-radius: 20px; font-size: 1.2rem;
+            display: none; text-align: center; pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Splash Screen -->
+    <div id="splash-screen">
+        <div id="text-mhhen" class="splash-text">MHHEN</div>
+        <div id="text-mhplays" class="splash-text">MHPLAYS<span>Android</span></div>
+        <div id="text-modded" class="splash-text">Modded & Scripted</div>
+
+        <div class="loader-container">
+            <div class="progress-bar-bg"><div id="progress-fill" class="progress-bar-fill"></div></div>
+            <div id="progress-text" class="progress-text">0%</div>
+        </div>
+    </div>
+
+    <!-- Coin Counter -->
+    <div class="coin-counter">🪙 <span id="coin-amount">100</span> Coins</div>
+
+    <!-- Main Menu (مطابق للصورة الأولى) -->
+    <div id="main-menu">
+        <button class="btn-shop-top" onclick="openModal('shop-modal')">Shop 🛒</button>
+
+        <div class="menu-left">
+            <div class="badge-by">By<br><span>MHplays</span></div>
+            <button class="btn-menu-custom" onclick="openModal('play-modal')">Play</button>
+            <button class="btn-menu-custom" onclick="openModal('settings-modal')">Settings</button>
+            <button class="btn-menu-custom" onclick="openModal('customize-modal')">Customize</button>
+        </div>
+
+        <div class="menu-center">
+            <div class="smiley-logo"><div class="smiley-mouth"></div></div>
+        </div>
+
+        <div class="menu-right">
+            <div class="title-ar">عشش<br>مراد<br>همج<br>_</div>
+            <div class="title-en">Murad<br>eshash<br>Hamaj</div>
+        </div>
+
+        <div class="badge-mhhen">MHHEN<br>1324</div>
+        <div class="ver-tag">1.1</div>
+    </div>
+
+    <!-- Play Modal (Difficulty Selection) -->
+    <div id="play-modal" class="modal-overlay">
+        <div class="modal-box">
+            <h2 style="color:#d60000; margin-bottom:10px;">اختر مستوى الصعوبة</h2>
+            <div class="diff-grid">
+                <button class="btn-diff" onclick="selectDiff('ghost', this)">Ghost</button>
+                <button class="btn-diff active" onclick="selectDiff('easy', this)">Easy</button>
+                <button class="btn-diff" onclick="selectDiff('normal', this)">Normal</button>
+                <button class="btn-diff" onclick="selectDiff('hard', this)">Hard</button>
+                <button class="btn-diff" onclick="selectDiff('challenge', this)">Challenge</button>
+            </div>
+            <div id="diff-note" class="diff-note">المطارد بطيء، ينقص 16 HP عند اللمس، ولا يسمع أصواتك.</div>
+            <button class="btn-menu-custom" style="width:100%; margin-top:10px;" onclick="startGame()">Start Game</button>
+            <br>
+            <button class="btn-close" onclick="closeModal('play-modal')">إلغاء</button>
+        </div>
+    </div>
+
+    <!-- Shop Modal (المتجر) -->
+    <div id="shop-modal" class="modal-overlay">
+        <div class="modal-box">
+            <h2 style="color:#FFB700; margin-bottom:10px;">المتجر - Shop</h2>
+            <div class="shop-grid" id="shop-items-container"></div>
+            <button class="btn-close" onclick="closeModal('shop-modal')">إغلاق</button>
+        </div>
+    </div>
+
+    <!-- Customize Modal (التخصيص) -->
+    <div id="customize-modal" class="modal-overlay">
+        <div class="modal-box">
+            <h2 style="color:#00ffcc; margin-bottom:10px;">التخصيص - Customize</h2>
+            <div class="shop-grid" id="customize-items-container"></div>
+            <button class="btn-close" onclick="closeModal('customize-modal')">إغلاق</button>
+        </div>
+    </div>
+
+    <!-- Settings Window -->
+    <div id="settings-modal" class="modal-overlay">
+        <div class="modal-box">
+            <h3 style="margin-bottom:15px; color:#ff0000;">جودة الجرافيكس / Quality</h3>
+            <button class="btn-diff" style="width:100%; margin:5px 0;" onclick="setGraphics('low')">Low (مظلم بدون إضاءة)</button>
+            <button class="btn-diff" style="width:100%; margin:5px 0;" onclick="setGraphics('medium')">Medium (عالي بدون مصابيح)</button>
+            <button class="btn-diff active" style="width:100%; margin:5px 0;" onclick="setGraphics('high')">High (خارق + مصابيح)</button>
+            <button class="btn-close" onclick="closeModal('settings-modal')">إغلاق</button>
+        </div>
+    </div>
+
+    <!-- Game HUD -->
+    <div id="game-hud">
+        <div id="health-container">
+            <div id="health-bar"></div>
+            <div id="health-text">HP: 100 / 100</div>
+        </div>
+
+        <div id="touch-joystick-base"><div id="touch-joystick-stick"></div></div>
+        <div id="btn-sprint" class="hud-btn" onclick="triggerSprint()">Sprint</div>
+        <div id="btn-action" class="hud-btn" onclick="handleAction()">Take</div>
+        <div id="msg-box"></div>
+    </div>
+
+    <script>
+        /* ----------------------------------------------------
+           1. GAME DATA & SHOP ITEMS CONFIGURATION
+        ---------------------------------------------------- */
+        let coins = 100;
+        let selectedDiff = 'easy';
+
+        const diffSettings = {
+            ghost: { speed: 0, damage: 0, hearing: 0, note: "Ghost: لا يراك المطارد، ولا تخسر حتى لو اقتربت منه." },
+            easy: { speed: 3.5, damage: 16, hearing: 0, note: "Easy: المطارد بطيء، ينقص 16 HP عند اللمس، ولا يسمع الأصوات." },
+            normal: { speed: 5.5, damage: 23, hearing: 15, note: "Normal: المطارد متوسط السرعة، ينقص 23 HP عند اللمس، وسمعه متوسط." },
+            hard: { speed: 7.5, damage: 33, hearing: 30, note: "Hard: المطارد سريع، ينقص 33 HP عند اللمس، وسمعه قوي جداً." },
+            challenge: { speed: 11.0, damage: 50, hearing: 1000, note: "Challenge: المطارد كالفلاش، ينقص 50 HP عند اللمس، ويسمعك من أي مسافة!" }
+        };
+
+        const shopItems = [
+            { id: 'key_classic', type: 'key', name: 'مفتاح نحاسي', price: 10, bought: true, color: 0xb87333 },
+            { id: 'key_gold', type: 'key', name: 'مفتاح ذهبي', price: 30, bought: false, color: 0xFFD700 },
+            { id: 'key_angel', type: 'key', name: 'مفتاح مجنح', price: 40, bought: false, color: 0x00ffff },
+            { id: 'key_car', type: 'key', name: 'ريموت سيارة', price: 15, bought: false, color: 0x333333 },
+
+            { id: 'door_wood', type: 'door', name: 'باب خشبي', price: 30, bought: true, color: 0x552200 },
+            { id: 'door_classic', type: 'door', name: 'باب بني فاخر', price: 45, bought: false, color: 0x8b4513 },
+            { id: 'door_rainbow', type: 'door', name: 'باب قزحي', price: 30, bought: false, color: 0xff00ff },
+            { id: 'door_white', type: 'door', name: 'باب أبيض مودرن', price: 40, bought: false, color: 0xffffff },
+
+            { id: 'bot_yellow', type: 'bot', name: 'مراد الحزين', price: 20, bought: true, color: '#ffcc00' },
+            { id: 'bot_red', type: 'bot', name: 'مراد المرعب', price: 35, bought: false, color: '#ff0000' }
+        ];
+
+        let activeSkins = { key: 'key_classic', door: 'door_wood', bot: 'bot_yellow' };
+
+        /* ----------------------------------------------------
+           2. SPLASH SCREEN & SYSTEM INITIALIZATION
+        ---------------------------------------------------- */
+        let loadingTime = 0;
+        const totalLoadingTime = 6000;
+        const updateInterval = 50;
+
+        const loadingTimer = setInterval(() => {
+            loadingTime += updateInterval;
+            let progress = Math.min(Math.floor((loadingTime / totalLoadingTime) * 100), 100);
+            
+            document.getElementById('progress-fill').style.width = progress + '%';
+            document.getElementById('progress-text').innerText = progress + '%';
+
+            let seconds = loadingTime / 1000;
+            if (seconds < 2) {
+                document.getElementById('text-mhhen').style.display = 'block';
+            } else if (seconds < 4) {
+                document.getElementById('text-mhhen').style.display = 'none';
+                document.getElementById('text-mhplays').style.display = 'block';
+            } else {
+                document.getElementById('text-mhplays').style.display = 'none';
+                document.getElementById('text-modded').style.display = 'block';
+            }
+
+            if (loadingTime >= totalLoadingTime) {
+                clearInterval(loadingTimer);
+                document.getElementById('splash-screen').style.display = 'none';
+                document.getElementById('main-menu').style.display = 'flex';
+                renderShopAndCustomize();
+                init3DEngine();
+            }
+        }, updateInterval);
+
+        function updateCoinDisplay() {
+            document.getElementById('coin-amount').innerText = coins;
+        }
+
+        function openModal(id) { document.getElementById(id).style.display = 'flex'; }
+        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+
+        function selectDiff(diff, btn) {
+            selectedDiff = diff;
+            document.querySelectorAll('.btn-diff').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            document.getElementById('diff-note').innerText = diffSettings[diff].note;
+        }
+
+        /* ----------------------------------------------------
+           3. SHOP & CUSTOMIZE RENDER LOGIC
+        ---------------------------------------------------- */
+        function renderShopAndCustomize() {
+            const shopContainer = document.getElementById('shop-items-container');
+            const customContainer = document.getElementById('customize-items-container');
+
+            shopContainer.innerHTML = '';
+            customContainer.innerHTML = '';
+
+            shopItems.forEach(item => {
+                // عنصر المتجر
+                const shopEl = document.createElement('div');
+                shopEl.className = 'shop-item';
+                shopEl.innerHTML = `
+                    <div style="font-size:2rem;">📦</div>
+                    <div style="font-size:0.9rem; font-weight:bold;">${item.name}</div>
+                    <div class="shop-price">${item.price} Coins</div>
+                    ${item.bought 
+                        ? `<button class="btn-buy purchased">تم الشراء</button>` 
+                        : `<button class="btn-buy" onclick="buyItem('${item.id}')">Buy</button>`}
+                `;
+                shopContainer.appendChild(shopEl);
+
+                // عنصر التخصيص (للمشتريات فقط)
+                if (item.bought) {
+                    const isSelected = activeSkins[item.type] === item.id;
+                    const customEl = document.createElement('div');
+                    customEl.className = 'shop-item';
+                    customEl.innerHTML = `
+                        <div style="font-size:2rem;">✨</div>
+                        <div style="font-size:0.9rem; font-weight:bold;">${item.name}</div>
+                        <button class="btn-select" style="${isSelected ? 'background:#888;' : ''}" 
+                            onclick="selectSkin('${item.type}', '${item.id}')">
+                            ${isSelected ? 'مفعل' : 'تفعيل'}
+                        </button>
+                    `;
+                    customContainer.appendChild(customEl);
+                }
+            });
+        }
+
+        function buyItem(id) {
+            const item = shopItems.find(i => i.id === id);
+            if (item && !item.bought) {
+                if (coins >= item.price) {
+                    coins -= item.price;
+                    item.bought = true;
+                    updateCoinDisplay();
+                    renderShopAndCustomize();
+                    alert(`تم شراء ${item.name} بنجاح!`);
+                } else {
+                    alert("لا تملك عملات كافية!");
+                }
+            }
+        }
+
+        function selectSkin(type, id) {
+            activeSkins[type] = id;
+            renderShopAndCustomize();
+            applySkinsTo3D();
+        }
+
+        /* ----------------------------------------------------
+           4. THREE.JS ENGINE & GRAPHICS
+        ---------------------------------------------------- */
+        let scene, camera, renderer;
+        let player, nextbot, keyItem, doorItem;
+        let flashlight, globalLanterns = [];
+        let hedgeMaterial, floorMaterial;
+
+        let playerHP = 100;
+        let hasKey = false;
+        let isSprintCooldown = false;
+        let speedMultiplier = 1;
+        let canTakeDamage = true;
+        let soundTargetPos = null;
+
+        const mazeMap = [
+            [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+            [1,'S',0,1,0,0,0,1,0,0,0,0,0,'K',1],
+            [1,1,0,1,0,1,0,1,0,1,1,1,1,0,1],
+            [1,0,0,0,0,1,0,0,0,0,0,0,1,0,1],
+            [1,0,1,1,1,1,1,1,1,1,1,0,1,0,1],
+            [1,0,0,0,1,0,0,0,0,0,1,0,0,0,1],
+            [1,1,1,0,1,0,1,1,1,0,1,1,1,0,1],
+            [1,0,0,0,0,0,1,0,0,0,0,0,1,0,1],
+            [1,0,1,1,1,1,1,0,1,1,1,0,1,1,1],
+            [1,0,0,0,0,0,0,0,1,0,0,0,0,'D',1],
+            [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+        ];
+
+        const cellSize = 8;
+        const wallHeight = 8;
+        let walls = [];
+
+        function generateHedgeTexture() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 256; canvas.height = 256;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#1c3b12'; ctx.fillRect(0, 0, 256, 256);
+
+            for (let i = 0; i < 4000; i++) {
+                let x = Math.random() * 256; let y = Math.random() * 256;
+                let radius = 1 + Math.random() * 3;
+                let shade = Math.floor(Math.random() * 80);
+                ctx.fillStyle = `rgb(${20 + shade}, ${60 + shade}, ${15 + shade})`;
+                ctx.beginPath(); ctx.arc(x, y, radius, 0, Math.PI * 2); ctx.fill();
+            }
+            const texture = new THREE.CanvasTexture(canvas);
+            texture.wrapS = THREE.RepeatWrapping; texture.wrapT = THREE.RepeatWrapping;
+            return texture;
+        }
+
+        function init3DEngine() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x020302);
+            scene.fog = new THREE.FogExp2(0x020302, 0.04);
+
+            camera = new THREE.PerspectiveCamera(65, window.innerWidth / window.innerHeight, 0.1, 1000);
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.shadowMap.enabled = true;
+            document.body.appendChild(renderer.domElement);
+
+            const hedgeTex = generateHedgeTexture(); hedgeTex.repeat.set(2, 2);
+            hedgeMaterial = new THREE.MeshStandardMaterial({ map: hedgeTex, roughness: 0.8 });
+
+            const floorTex = generateHedgeTexture(); floorTex.repeat.set(16, 16);
+            floorMaterial = new THREE.MeshStandardMaterial({ map: floorTex, roughness: 0.9 });
+
+            player = new THREE.Group();
+            scene.add(player);
+
+            camera.position.set(0, 2.5, 0);
+            camera.rotation.order = 'YXZ';
+            player.add(camera);
+
+            flashlight = new THREE.SpotLight(0xffffff, 2.5, 35, Math.PI / 4, 0.5);
+            camera.add(flashlight);
+            flashlight.target.position.set(0, 0, -5);
+            camera.add(flashlight.target);
+
+            build3DMaze();
+            createNextbot();
+            setupGrannyTouchControls();
+
+            window.addEventListener('resize', onWindowResize);
+        }
+
+        function build3DMaze() {
+            const wallGeo = new THREE.BoxGeometry(cellSize, wallHeight, cellSize);
+            const floorGeo = new THREE.PlaneGeometry(mazeMap[0].length * cellSize, mazeMap.length * cellSize);
+            
+            const floor = new THREE.Mesh(floorGeo, floorMaterial);
+            floor.rotation.x = -Math.PI / 2;
+            floor.position.set((mazeMap[0].length * cellSize)/2 - cellSize/2, 0, (mazeMap.length * cellSize)/2 - cellSize/2);
+            scene.add(floor);
+
+            for (let r = 0; r < mazeMap.length; r++) {
+                for (let c = 0; c < mazeMap[r].length; c++) {
+                    let cell = mazeMap[r][c];
+                    let x = c * cellSize; let z = r * cellSize;
+
+                    if (cell === 1) {
+                        let wall = new THREE.Mesh(wallGeo, hedgeMaterial);
+                        wall.position.set(x, wallHeight / 2, z);
+                        scene.add(wall); walls.push(wall);
+                    } else if (cell === 'S') {
+                        player.position.set(x, 0, z);
+                    } else if (cell === 'K') {
+                        const keyGeo = new THREE.TorusGeometry(0.5, 0.15, 12, 24);
+                        const keyMat = new THREE.MeshStandardMaterial({ color: 0xFFD700 });
+                        keyItem = new THREE.Mesh(keyGeo, keyMat);
+                        keyItem.position.set(x, 1.5, z);
+                        scene.add(keyItem);
+                    } else if (cell === 'D') {
+                        const doorGeo = new THREE.BoxGeometry(cellSize, wallHeight - 1, 0.6);
+                        const doorMat = new THREE.MeshStandardMaterial({ color: 0x552200 });
+                        doorItem = new THREE.Mesh(doorGeo, doorMat);
+                        doorItem.position.set(x, (wallHeight - 1) / 2, z);
+                        scene.add(doorItem);
+                    }
+                }
+            }
+        }
+
+        function createNextbot() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 256; canvas.height = 256;
+            const ctx = canvas.getContext('2d');
+            
+            ctx.fillStyle = '#ffcc00';
+            ctx.beginPath(); ctx.arc(128, 128, 120, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = '#000';
+            ctx.beginPath(); ctx.arc(85, 100, 25, 0, Math.PI * 2); ctx.arc(171, 100, 25, 0, Math.PI * 2); ctx.fill();
+            ctx.beginPath(); ctx.arc(128, 170, 50, 0, Math.PI, true); ctx.lineWidth = 10; ctx.stroke();
+
+            const texture = new THREE.CanvasTexture(canvas);
+            const spriteMat = new THREE.SpriteMaterial({ map: texture });
+            
+            nextbot = new THREE.Sprite(spriteMat);
+            nextbot.scale.set(5, 5, 1);
+            nextbot.position.set(cellSize * 13, 2.5, cellSize * 1);
+            scene.add(nextbot);
+        }
+
+        function applySkinsTo3D() {
+            // تطبيق السكنات المحددة من التخصص على العناصر
+            const keySkin = shopItems.find(i => i.id === activeSkins.key);
+            if (keyItem && keySkin) keyItem.material.color.setHex(keySkin.color);
+
+            const doorSkin = shopItems.find(i => i.id === activeSkins.door);
+            if (doorItem && doorSkin) doorItem.material.color.setHex(doorSkin.color);
+        }
+
+        /* ----------------------------------------------------
+           5. CONTROLS & TOUCH ENGINE
+        ---------------------------------------------------- */
+        let moveVec = { x: 0, y: 0 };
+        let joystickTouchId = null, lookTouchId = null;
+        let previousTouchX = 0, previousTouchY = 0;
+
+        const stick = document.getElementById('touch-joystick-stick');
+        const base = document.getElementById('touch-joystick-base');
+
+        function setupGrannyTouchControls() {
+            window.addEventListener('touchstart', (e) => {
+                for (let i = 0; i < e.changedTouches.length; i++) {
+                    let touch = e.changedTouches[i];
+                    const rect = base.getBoundingClientRect();
+                    if (touch.clientX >= rect.left && touch.clientX <= rect.right &&
+                        touch.clientY >= rect.top && touch.clientY <= rect.bottom) {
+                        joystickTouchId = touch.identifier;
+                        updateJoystick(touch);
+                    } else if (lookTouchId === null && (touch.clientX > rect.right || touch.clientY < rect.top)) {
+                        lookTouchId = touch.identifier;
+                        previousTouchX = touch.clientX; previousTouchY = touch.clientY;
+                    }
+                }
+            }, { passive: false });
+
+            window.addEventListener('touchmove', (e) => {
+                e.preventDefault();
+                for (let i = 0; i < e.changedTouches.length; i++) {
+                    let touch = e.changedTouches[i];
+                    if (touch.identifier === joystickTouchId) {
+                        updateJoystick(touch);
+                    } else if (touch.identifier === lookTouchId) {
+                        let movementX = touch.clientX - previousTouchX;
+                        let movementY = touch.clientY - previousTouchY;
+                        previousTouchX = touch.clientX; previousTouchY = touch.clientY;
+
+                        player.rotation.y -= movementX * 0.005;
+                        camera.rotation.x -= movementY * 0.005;
+                        camera.rotation.x = Math.max(-Math.PI / 2.2, Math.min(Math.PI / 2.2, camera.rotation.x));
+                    }
+                }
+            }, { passive: false });
+
+            window.addEventListener('touchend', (e) => {
+                for (let i = 0; i < e.changedTouches.length; i++) {
+                    let touch = e.changedTouches[i];
+                    if (touch.identifier === joystickTouchId) {
+                        joystickTouchId = null;
+                        stick.style.transform = `translate(0px, 0px)`;
+                        moveVec.x = 0; moveVec.y = 0;
+                    } else if (touch.identifier === lookTouchId) {
+                        lookTouchId = null;
+                    }
+                }
+            });
+        }
+
+        function updateJoystick(touch) {
+            const rect = base.getBoundingClientRect();
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
+
+            let dx = touch.clientX - centerX; let dy = touch.clientY - centerY;
+            let dist = Math.min(Math.hypot(dx, dy), 40);
+            let angle = Math.atan2(dy, dx);
+
+            let stickX = Math.cos(angle) * dist; let stickY = Math.sin(angle) * dist;
+            stick.style.transform = `translate(${stickX}px, ${stickY}px)`;
+            moveVec.x = stickX / 40; moveVec.y = -stickY / 40;
+        }
+
+        function setGraphics(level) {
+            if (level === 'low') { renderer.shadowMap.enabled = false; flashlight.visible = false; }
+            else if (level === 'medium') { renderer.shadowMap.enabled = true; flashlight.visible = false; }
+            else { renderer.shadowMap.enabled = true; flashlight.visible = true; }
+            closeModal('settings-modal');
+        }
+
+        /* ----------------------------------------------------
+           6. GAME HUD & LOGIC (DROP SOUND & AI SOUND SYSTEM)
+        ---------------------------------------------------- */
+        function startGame() {
+            closeModal('play-modal');
+            document.getElementById('main-menu').style.display = 'none';
+            document.getElementById('game-hud').style.display = 'block';
+            applySkinsTo3D();
+            animate();
+        }
+
+        function triggerSprint() {
+            if (isSprintCooldown) return;
+            speedMultiplier = 2.8;
+            const btn = document.getElementById('btn-sprint');
+            btn.classList.add('cooldown'); isSprintCooldown = true;
+
+            showMessage("سرعة فائقة مفعلة!");
+            setTimeout(() => { speedMultiplier = 1; }, 3000);
+            setTimeout(() => { isSprintCooldown = false; btn.classList.remove('cooldown'); }, 20000);
+        }
+
+        function playDropSound() {
+            // توليد صوت سقوط بسيط باستخدام Web Audio API
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(150, ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(40, ctx.currentTime + 0.3);
+                gain.gain.setValueAtTime(1, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+                osc.connect(gain); gain.connect(ctx.destination);
+                osc.start(); osc.stop(ctx.currentTime + 0.3);
+            } catch(e) {}
+        }
+
+        function handleAction() {
+            const actionBtn = document.getElementById('btn-action');
+            if (!hasKey && keyItem) {
+                hasKey = true;
+                scene.remove(keyItem);
+                actionBtn.innerText = 'Drop ✋';
+                showMessage("أخذت المفتاح!");
+            } else if (hasKey) {
+                hasKey = false;
+                keyItem.position.set(player.position.x, 1.5, player.position.z);
+                scene.add(keyItem);
+                actionBtn.innerText = 'Take ✋';
+                showMessage("تم إسقاط المفتاح! (صدر صوت)");
+
+                playDropSound();
+
+                // نظام السمع: إرسال موقع الصوت للمطارد بناءً على الصعوبة والمسافة
+                const currentDiff = diffSettings[selectedDiff];
+                const distToBot = player.position.distanceTo(nextbot.position);
+
+                if (currentDiff.hearing > 0 && distToBot <= currentDiff.hearing) {
+                    soundTargetPos = player.position.clone();
+                }
+            }
+        }
+
+        function takeDamage(amount) {
+            if (!canTakeDamage || selectedDiff === 'ghost') return;
+            playerHP -= amount;
+            if (playerHP < 0) playerHP = 0;
+
+            document.getElementById('health-bar').style.width = playerHP + '%';
+            document.getElementById('health-text').innerText = `HP: ${playerHP} / 100`;
+
+            canTakeDamage = false;
+            setTimeout(() => { canTakeDamage = true; }, 800);
+
+            if (playerHP <= 0) {
+                alert("تم القضاء عليك بواسطة مراد العشش!");
+                location.reload();
+            }
+        }
+
+        function showMessage(msg) {
+            const box = document.getElementById('msg-box');
+            box.innerText = msg; box.style.display = 'block';
+            setTimeout(() => { box.style.display = 'none'; }, 2500);
+        }
+
+        /* ----------------------------------------------------
+           7. MAIN LOOP & AI CHASE
+        ---------------------------------------------------- */
+        const clock = new THREE.Clock();
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            const delta = clock.getDelta();
+            const moveSpeed = 8 * speedMultiplier * delta;
+
+            if (moveVec.x !== 0 || moveVec.y !== 0) {
+                let moveDir = new THREE.Vector3(moveVec.x, 0, -moveVec.y);
+                moveDir.applyAxisAngle(new THREE.Vector3(0, 1, 0), player.rotation.y);
+
+                let nextPos = player.position.clone().addScaledVector(moveDir, moveSpeed);
+                if (!checkWallCollision(nextPos)) {
+                    player.position.copy(nextPos);
+                }
+            }
+
+            if (keyItem && !hasKey) keyItem.rotation.y += 0.03;
+
+            // الذكاء الاصطناعي للمطارد وحساب المسافات والأصوات
+            const currentDiff = diffSettings[selectedDiff];
+            if (selectedDiff !== 'ghost') {
+                let target = soundTargetPos ? soundTargetPos : player.position;
+                let chaseDir = new THREE.Vector3().subVectors(target, nextbot.position);
+                chaseDir.y = 0; chaseDir.normalize();
+
+                nextbot.position.addScaledVector(chaseDir, currentDiff.speed * delta);
+
+                // إلغاء هدف الصوت عندما يصل إليه المطارد
+                if (soundTargetPos && nextbot.position.distanceTo(soundTargetPos) < 2.0) {
+                    soundTargetPos = null;
+                }
+
+                // الضرر عند اللمس
+                if (nextbot.position.distanceTo(player.position) < 2.0) {
+                    takeDamage(currentDiff.damage);
+                }
+            }
+
+            checkInteractions();
+            renderer.render(scene, camera);
+        }
+
+        function checkWallCollision(pos) {
+            for (let wall of walls) {
+                let box = new THREE.Box3().setFromObject(wall);
+                if (box.containsPoint(pos)) return true;
+            }
+            return false;
+        }
+
+        function checkInteractions() {
+            const actionBtn = document.getElementById('btn-action');
+            if (!hasKey && keyItem) {
+                if (player.position.distanceTo(keyItem.position) < 3.5) {
+                    actionBtn.style.display = 'flex';
+                    actionBtn.innerText = 'Take ✋';
+                } else { actionBtn.style.display = 'none'; }
+            } else if (hasKey) { actionBtn.style.display = 'flex'; }
+
+            if (doorItem && player.position.distanceTo(doorItem.position) < 4) {
+                if (!hasKey) {
+                    showMessage("تحتاج إلى المفتاح لفتح الباب!");
+                } else {
+                    showMessage("🎉 مبروك! فتحت الباب وهروب بنجاح!");
+                    coins += 50; // مكافأة الفوز
+                    updateCoinDisplay();
+                    setTimeout(() => { alert("لقد فزت باللعبة وحصلت على 50 عملة!"); location.reload(); }, 1000);
+                }
+            }
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+    </script>
+</body>
+</html>
